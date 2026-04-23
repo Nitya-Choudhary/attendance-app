@@ -76,16 +76,16 @@
 - [ ] Mark notifications as read
 
 ## Testing & Polish
-- [ ] Write vitest tests for critical backend functions
-- [ ] Test role-based access control
-- [ ] Test file upload and download flows
+- [x] Write vitest tests for critical backend functions
+- [x] Test role-based access control
+- [x] Test file upload and download flows
 - [ ] Mobile responsiveness testing
 - [ ] Cross-browser testing
 - [ ] Performance optimization
 - [ ] Final UI polish and refinement
 
 ## Deployment
-- [ ] Create final checkpoint
+- [x] Create final checkpoint
 - [ ] Deploy to Manus platform
-- [ ] Generate deployment instructions
-- [ ] Document local development setup
+- [x] Generate deployment instructions
+- [x] Document local development setup
