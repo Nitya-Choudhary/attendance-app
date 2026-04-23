@@ -98,3 +98,19 @@ export const feedback = mysqlTable("feedback", {
 
 export type Feedback = typeof feedback.$inferSelect;
 export type InsertFeedback = typeof feedback.$inferInsert;
+
+/**
+ * AttendanceWindow table: tracks when teachers enable attendance marking (5-minute window)
+ */
+export const attendanceWindow = mysqlTable("attendanceWindow", {
+  id: int("id").autoincrement().primaryKey(),
+  teacherId: int("teacherId").notNull(),
+  startTime: timestamp("startTime").notNull(),
+  endTime: timestamp("endTime").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AttendanceWindow = typeof attendanceWindow.$inferSelect;
+export type InsertAttendanceWindow = typeof attendanceWindow.$inferInsert;

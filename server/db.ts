@@ -1,6 +1,6 @@
 import { eq, and, gte, lte, like, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, attendance, assignments, submissions, feedback } from "../drizzle/schema";
+import { InsertUser, users, attendance, assignments, submissions, feedback, attendanceWindow } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -332,4 +332,78 @@ export async function replyToFeedback(id: number, reply: string, repliedBy: numb
       updatedAt: new Date() 
     })
     .where(eq(feedback.id, id));
+}
+
+
+// Attendance Window queries
+export async function enableAttendanceWindow(teacherId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const now = new Date();
+  const endTime = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes from now
+  
+  return await db.insert(attendanceWindow).values({
+    teacherId,
+    startTime: now,
+    endTime,
+    isActive: true,
+  });
+}
+
+export async function disableAttendanceWindow(teacherId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.update(attendanceWindow)
+    .set({ isActive: false, updatedAt: new Date() })
+    .where(and(
+      eq(attendanceWindow.teacherId, teacherId),
+      eq(attendanceWindow.isActive, true)
+    ));
+}
+
+export async function getActiveAttendanceWindow(teacherId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const now = new Date();
+  const result = await db.select().from(attendanceWindow)
+    .where(and(
+      eq(attendanceWindow.teacherId, teacherId),
+      eq(attendanceWindow.isActive, true),
+      lte(attendanceWindow.startTime, now),
+      gte(attendanceWindow.endTime, now)
+    ))
+    .limit(1);
+  
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function getAttendanceWindowStatus(teacherId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(attendanceWindow)
+    .where(and(
+      eq(attendanceWindow.teacherId, teacherId),
+      eq(attendanceWindow.isActive, true)
+    ))
+    .orderBy(desc(attendanceWindow.createdAt))
+    .limit(1);
+  
+  if (result.length === 0) return null;
+  
+  const window = result[0];
+  const now = new Date();
+  
+  if (now > window.endTime) {
+    // Window has expired, mark as inactive
+    await db.update(attendanceWindow)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(attendanceWindow.id, window.id));
+    return null;
+  }
+  
+  return window;
 }

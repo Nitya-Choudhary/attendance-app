@@ -23,6 +23,32 @@ function TeacherAttendance() {
   const [selectedSubject, setSelectedSubject] = useState("");
   const [studentId, setStudentId] = useState("");
   const [status, setStatus] = useState<"present" | "absent">("present");
+  const [windowCountdown, setWindowCountdown] = useState<number | null>(null);
+
+  const enableWindowMutation = trpc.attendance.enableWindow.useMutation({
+    onSuccess: () => {
+      toast.success("Attendance marking window enabled for 5 minutes");
+      refetchWindowStatus();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to enable attendance window");
+    },
+  });
+
+  const disableWindowMutation = trpc.attendance.disableWindow.useMutation({
+    onSuccess: () => {
+      toast.success("Attendance marking window disabled");
+      refetchWindowStatus();
+      setWindowCountdown(null);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to disable attendance window");
+    },
+  });
+
+  const { data: windowStatus, refetch: refetchWindowStatus } = trpc.attendance.getWindowStatus.useQuery(undefined, {
+    refetchInterval: 1000,
+  });
 
   const markAttendanceMutation = trpc.attendance.markAttendance.useMutation({
     onSuccess: () => {
@@ -44,12 +70,25 @@ function TeacherAttendance() {
       return;
     }
 
+    if (!windowStatus) {
+      toast.error("Please enable the attendance marking window first");
+      return;
+    }
+
     markAttendanceMutation.mutate({
       studentId: parseInt(studentId),
       subject: selectedSubject,
       status,
       date: selectedDate,
     });
+  };
+
+  const handleEnableWindow = () => {
+    enableWindowMutation.mutate();
+  };
+
+  const handleDisableWindow = () => {
+    disableWindowMutation.mutate();
   };
 
   const { data: csvData } = trpc.attendance.exportCSV.useQuery({
@@ -77,9 +116,57 @@ function TeacherAttendance() {
           <div className="accent-line w-24 mt-4"></div>
         </div>
 
+        {/* Attendance Window Control */}
+        <Card className="card-cinematic border-2 border-secondary">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-2">Attendance Marking Window</h2>
+              {windowStatus ? (
+                <div className="flex items-center gap-4">
+                  <div className="text-green-400 font-semibold">
+                    ✓ Window Active
+                  </div>
+                  <div className="text-lg font-mono text-secondary">
+                    {Math.floor(windowStatus.timeRemainingSeconds / 60)}:{String(windowStatus.timeRemainingSeconds % 60).padStart(2, '0')}
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    ({windowStatus.timeRemainingSeconds}s remaining)
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-400">Marking window is inactive. Enable to start marking attendance.</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {windowStatus ? (
+                <Button
+                  onClick={handleDisableWindow}
+                  disabled={disableWindowMutation.isPending}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {disableWindowMutation.isPending ? "Disabling..." : "Disable Window"}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleEnableWindow}
+                  disabled={enableWindowMutation.isPending}
+                  className="bg-secondary hover:bg-secondary/80"
+                >
+                  {enableWindowMutation.isPending ? "Enabling..." : "Enable 5-Min Window"}
+                </Button>
+              )}
+            </div>
+          </div>
+        </Card>
+
         {/* Mark Attendance Form */}
         <Card className="card-cinematic">
           <h2 className="text-2xl font-bold text-white mb-6">Mark Attendance</h2>
+          {!windowStatus && (
+            <div className="mb-6 p-4 bg-red-900/20 border border-red-500/50 rounded-lg">
+              <p className="text-red-300 font-semibold">⚠️ Attendance marking is disabled. Please enable the marking window above to mark attendance.</p>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Date</label>

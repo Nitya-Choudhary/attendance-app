@@ -15,6 +15,13 @@
       "when": 1776953932251,
       "tag": "0001_ancient_wind_dancer",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1776955838180,
+      "tag": "0002_happy_the_spike",
+      "breakpoints": true
     }
   ]
 }

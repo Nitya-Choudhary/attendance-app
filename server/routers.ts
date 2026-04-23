@@ -38,7 +38,15 @@ export const appRouter = router({
         status: z.enum(['present', 'absent']),
         date: z.string(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const window = await db.getActiveAttendanceWindow(ctx.user.id);
+        if (!window) {
+          throw new TRPCError({ 
+            code: 'FORBIDDEN', 
+            message: 'Attendance marking window is not active. Please enable it first.' 
+          });
+        }
+        
         const date = new Date(input.date);
         return await db.markAttendance(input.studentId, input.subject, input.status, date);
       }),
@@ -99,6 +107,34 @@ export const appRouter = router({
         });
         
         return csv;
+      }),
+
+    enableWindow: teacherProcedure
+      .mutation(async ({ ctx }) => {
+        await db.disableAttendanceWindow(ctx.user.id);
+        return await db.enableAttendanceWindow(ctx.user.id);
+      }),
+
+    disableWindow: teacherProcedure
+      .mutation(async ({ ctx }) => {
+        return await db.disableAttendanceWindow(ctx.user.id);
+      }),
+
+    getWindowStatus: teacherProcedure
+      .query(async ({ ctx }) => {
+        const window = await db.getAttendanceWindowStatus(ctx.user.id);
+        if (!window) return null;
+        
+        const now = new Date();
+        const timeRemaining = Math.max(0, window.endTime.getTime() - now.getTime());
+        
+        return {
+          isActive: window.isActive,
+          startTime: window.startTime,
+          endTime: window.endTime,
+          timeRemaining,
+          timeRemainingSeconds: Math.ceil(timeRemaining / 1000),
+        };
       }),
   }),
 

@@ -89,3 +89,22 @@
 - [ ] Deploy to Manus platform
 - [x] Generate deployment instructions
 - [x] Document local development setup
+
+
+## New Feature: Attendance Marking Window
+- [x] Add attendanceWindow table to schema (teacherId, startTime, endTime, isActive)
+- [x] Create backend API to enable/disable attendance marking window
+- [x] Add 5-minute auto-close logic with timestamp validation
+- [x] Update attendance marking to check if window is active
+- [x] Prevent non-window-owner teachers from marking attendance
+- [x] Add countdown timer UI component
+- [x] Update Attendance page with window status display
+- [x] Add tests for attendance window validation
+
+
+## GitHub Export & Deployment
+- [ ] Export project to GitHub as public repo (Nitya-Choudhary/attendance-app)
+- [ ] Create Vercel deployment configuration
+- [ ] Set up backend deployment for full integration
+- [ ] Configure environment variables for production
+- [ ] Test full deployment pipeline
